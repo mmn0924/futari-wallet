@@ -13,9 +13,25 @@
           <p class="eyebrow">Couple Budget</p>
           <h1>ふたり財布</h1>
         </div>
-        <button class="icon-button" id="resetButton" type="button" aria-label="リセット" title="リセット">
-          ↺
-        </button>
+        <div class="top-actions">
+          <button class="icon-button" id="resetButton" type="button" aria-label="リセット" title="リセット">
+            ↺
+          </button>
+          <button
+            class="icon-button"
+            id="menuButton"
+            type="button"
+            aria-label="メニュー"
+            aria-expanded="false"
+            title="メニュー"
+          >
+            ⋯
+          </button>
+          <div class="menu-popover" id="mainMenu" hidden>
+            <button id="settingsOpenButton" type="button">設定</button>
+            <button id="themeOpenButton" type="button">テーマカラー</button>
+          </div>
+        </div>
       </header>
 
       <section class="summary-band" aria-label="今月の残高">
@@ -26,36 +42,36 @@
         </div>
         <div class="mini-balances">
           <article>
-            <span>わたし</span>
+            <span id="myBalanceName">自分</span>
             <strong id="myBalance">0円</strong>
-          </article>
-          <article>
-            <span>パートナー</span>
-            <strong id="partnerBalance">0円</strong>
           </article>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-title">
-          <h2>今月の設定</h2>
-          <span id="monthLabel"></span>
+          <h2>月の設定</h2>
+          <div class="month-switch" aria-label="月切り替え">
+            <button id="prevMonthButton" type="button" aria-label="前の月">‹</button>
+            <span id="monthLabel"></span>
+            <button id="nextMonthButton" type="button" aria-label="次の月">›</button>
+          </div>
         </div>
         <form class="setup-grid" id="setupForm">
           <label>
-            <span>わたしの収入</span>
+            <span id="myIncomeText">自分の収入</span>
             <input id="myIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
           </label>
-          <label>
-            <span>パートナーの収入</span>
+          <label class="private-field" id="partnerIncomeField" hidden>
+            <span id="partnerIncomeText">パートナーの収入</span>
             <input id="partnerIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
           </label>
           <label>
-            <span>わたしが共有財布へ</span>
+            <span id="mySharedText">自分が共有財布へ</span>
             <input id="myShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
           </label>
           <label>
-            <span>パートナーが共有財布へ</span>
+            <span id="partnerSharedText">パートナーが共有財布へ</span>
             <input id="partnerShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
           </label>
         </form>
@@ -65,6 +81,11 @@
         <div class="section-title">
           <h2>支出を入力</h2>
           <span>例: セブン 240円</span>
+        </div>
+        <div class="wallet-selector" aria-label="支払い元">
+          <button class="wallet-option is-active" type="button" data-wallet="shared">共有財布</button>
+          <button class="wallet-option" type="button" data-wallet="me">自分</button>
+          <button class="wallet-option private-field" type="button" data-wallet="partner" hidden>パートナー</button>
         </div>
         <form id="expenseForm" class="expense-form">
           <input id="expenseText" autocomplete="off" placeholder="セブン 240円" />
@@ -90,6 +111,80 @@
       </section>
     </main>
 
+    <div class="settings-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="settingsTitle">設定</h2>
+          <button class="icon-button" id="settingsCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <form class="settings-form" id="settingsForm">
+          <label>
+            <span>自分の表示名</span>
+            <input id="meDisplayName" autocomplete="off" maxlength="20" placeholder="自分" />
+          </label>
+          <label>
+            <span>パートナーの表示名</span>
+            <input id="partnerDisplayName" autocomplete="off" maxlength="20" placeholder="パートナー" />
+          </label>
+          <div class="settings-actions">
+            <button class="text-button" id="settingsCancelButton" type="button">閉じる</button>
+            <button class="save-button" type="submit">保存</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="settings-backdrop" id="expenseEditModal" role="dialog" aria-modal="true" aria-labelledby="expenseEditTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="expenseEditTitle">支出を編集</h2>
+          <button class="icon-button" id="expenseEditCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <form class="settings-form" id="expenseEditForm">
+          <input id="editingExpenseId" type="hidden" />
+          <label>
+            <span>メモ</span>
+            <input id="editExpenseName" autocomplete="off" placeholder="例 セブン" />
+          </label>
+          <label>
+            <span>金額</span>
+            <input id="editExpenseAmount" inputmode="numeric" pattern="[0-9]*" placeholder="例 240" />
+          </label>
+          <label>
+            <span>カテゴリ</span>
+            <select id="editExpenseCategory"></select>
+          </label>
+          <label>
+            <span>支払い元</span>
+            <select id="editExpenseWallet">
+              <option value="shared">共有財布</option>
+              <option value="me">自分</option>
+            </select>
+          </label>
+          <div class="settings-actions">
+            <button class="text-button" id="expenseEditCancelButton" type="button">閉じる</button>
+            <button class="save-button" type="submit">保存</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="settings-backdrop" id="themeModal" role="dialog" aria-modal="true" aria-labelledby="themeTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="themeTitle">テーマカラー</h2>
+          <button class="icon-button" id="themeCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <div class="theme-grid" id="themeOptions" aria-label="テーマカラー選択"></div>
+      </section>
+    </div>
+
     <template id="expenseItemTemplate">
       <article class="expense-item">
         <div>
@@ -98,6 +193,7 @@
         </div>
         <div class="expense-side">
           <b class="expense-amount"></b>
+          <button class="edit-button" type="button">編集</button>
           <button class="delete-button" type="button" aria-label="削除" title="削除">×</button>
         </div>
       </article>
