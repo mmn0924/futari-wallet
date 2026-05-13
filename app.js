@@ -44,18 +44,49 @@ const elements = {
 };
 
 function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = readStorage();
   if (!saved) return { ...initialState };
 
   try {
-    return { ...initialState, ...JSON.parse(saved) };
+    return normalizeState(JSON.parse(saved));
   } catch {
     return { ...initialState };
   }
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  writeStorage(JSON.stringify(normalizeState(state)));
+}
+
+function readStorage() {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(value) {
+  try {
+    localStorage.setItem(STORAGE_KEY, value);
+  } catch {
+    // 保存できない環境でも、入力中の画面操作は続けられるようにする。
+  }
+}
+
+function normalizeState(savedState) {
+  return {
+    myIncome: toSafeNumber(savedState?.myIncome),
+    partnerIncome: toSafeNumber(savedState?.partnerIncome),
+    myShared: toSafeNumber(savedState?.myShared),
+    partnerShared: toSafeNumber(savedState?.partnerShared),
+    expenses: Array.isArray(savedState?.expenses) ? savedState.expenses : [],
+  };
+}
+
+function toSafeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : 0;
 }
 
 function yen(value) {
