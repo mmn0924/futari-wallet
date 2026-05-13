@@ -30,6 +30,7 @@
           <div class="menu-popover" id="mainMenu" hidden>
             <button id="settingsOpenButton" type="button">設定</button>
             <button id="themeOpenButton" type="button">テーマカラー</button>
+            <button id="backupOpenButton" type="button">バックアップ</button>
           </div>
         </div>
       </header>
@@ -50,11 +51,12 @@
 
       <section class="panel">
         <div class="section-title">
-          <h2>月の設定</h2>
+          <h2>今月の予算</h2>
           <div class="month-switch" aria-label="月切り替え">
             <button id="prevMonthButton" type="button" aria-label="前の月">‹</button>
-            <span id="monthLabel"></span>
+            <button class="month-label-button" id="monthListButton" type="button" aria-expanded="false"></button>
             <button id="nextMonthButton" type="button" aria-label="次の月">›</button>
+            <div class="month-list-popover" id="monthList" hidden></div>
           </div>
         </div>
         <form class="setup-grid" id="setupForm">
@@ -182,6 +184,22 @@
           </button>
         </div>
         <div class="theme-grid" id="themeOptions" aria-label="テーマカラー選択"></div>
+      </section>
+    </div>
+
+    <div class="settings-backdrop" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="backupTitle">バックアップ</h2>
+          <button class="icon-button" id="backupCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <div class="settings-actions">
+          <button class="save-button" id="exportDataButton" type="button">データを書き出す</button>
+          <button class="text-button" id="importDataButton" type="button">データを読み込む</button>
+        </div>
+        <input id="importDataInput" type="file" accept="application/json,.json" hidden />
       </section>
     </div>
 

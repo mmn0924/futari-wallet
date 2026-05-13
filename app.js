@@ -1,5 +1,6 @@
 const STORAGE_KEY = "couple-budget-simple-v1";
 const STORAGE_KEYS = [STORAGE_KEY];
+const BACKUP_APP_ID = "couple-budget-simple";
 
 const categories = [
   { key: "convenience", label: "食費 / コンビニ", group: "食費" },
@@ -117,6 +118,8 @@ const elements = {
   partnerSharedText: document.querySelector("#partnerSharedText"),
   prevMonthButton: document.querySelector("#prevMonthButton"),
   nextMonthButton: document.querySelector("#nextMonthButton"),
+  monthListButton: document.querySelector("#monthListButton"),
+  monthList: document.querySelector("#monthList"),
   setupForm: document.querySelector("#setupForm"),
   myIncome: document.querySelector("#myIncome"),
   partnerIncome: document.querySelector("#partnerIncome"),
@@ -145,6 +148,12 @@ const elements = {
   themeModal: document.querySelector("#themeModal"),
   themeCloseButton: document.querySelector("#themeCloseButton"),
   themeOptions: document.querySelector("#themeOptions"),
+  backupOpenButton: document.querySelector("#backupOpenButton"),
+  backupModal: document.querySelector("#backupModal"),
+  backupCloseButton: document.querySelector("#backupCloseButton"),
+  exportDataButton: document.querySelector("#exportDataButton"),
+  importDataButton: document.querySelector("#importDataButton"),
+  importDataInput: document.querySelector("#importDataInput"),
   expenseEditModal: document.querySelector("#expenseEditModal"),
   expenseEditForm: document.querySelector("#expenseEditForm"),
   expenseEditCloseButton: document.querySelector("#expenseEditCloseButton"),
@@ -211,6 +220,103 @@ function clearStorage() {
   if (!canUseLocalStorage()) return;
 
   STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+}
+
+function createBackupData() {
+  state = normalizeState(state);
+  return {
+    app: BACKUP_APP_ID,
+    version: 1,
+    storageKey: STORAGE_KEY,
+    exportedAt: new Date().toISOString(),
+    data: state,
+  };
+}
+
+async function downloadBackup() {
+  const backup = createBackupData();
+  const backupText = JSON.stringify(backup, null, 2);
+  const fileName = `futari-saifu-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  const blob = new Blob([backupText], {
+    type: "application/json",
+  });
+
+  if (await shareBackupOnMobile(blob, fileName)) return;
+
+  startBackupDownload(blob, fileName);
+}
+
+async function shareBackupOnMobile(blob, fileName) {
+  const isTouchSafari =
+    /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  if (!isTouchSafari || !navigator.canShare || !navigator.share || typeof File === "undefined") {
+    return false;
+  }
+
+  const file = new File([blob], fileName, { type: "application/json" });
+
+  if (!navigator.canShare({ files: [file] })) return false;
+
+  try {
+    await navigator.share({
+      files: [file],
+      title: "ふたり財布バックアップ",
+    });
+    return true;
+  } catch (error) {
+    return error?.name === "AbortError";
+  }
+}
+
+function startBackupDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noopener";
+  link.target = "_blank";
+  link.style.position = "fixed";
+  link.style.left = "-9999px";
+  document.body.append(link);
+  link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+
+  window.setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 30000);
+}
+
+function restoreBackupFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.addEventListener("load", () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || ""));
+      const restoredState = parsed?.data || parsed;
+
+      state = normalizeState(restoredState);
+      saveState();
+      closeBackup();
+      render();
+      alert("バックアップを読み込みました。");
+    } catch {
+      alert("読み込みに失敗しました。JSONファイルを確認してください。");
+    } finally {
+      elements.importDataInput.value = "";
+    }
+  });
+
+  reader.addEventListener("error", () => {
+    elements.importDataInput.value = "";
+    alert("ファイルを読み込めませんでした。");
+  });
+
+  reader.readAsText(file);
 }
 
 function canUseLocalStorage() {
@@ -293,8 +399,12 @@ function selectedMonthDate() {
 }
 
 function selectedMonthLabel() {
-  const date = selectedMonthDate();
-  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+  return monthLabel(state.selectedMonth);
+}
+
+function monthLabel(monthKey) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return `${year}年${month}月`;
 }
 
 function getSelectedMonthSettings() {
@@ -515,7 +625,7 @@ function render() {
   elements.myBalance.textContent = yen(balances.my);
   elements.dailyBudget.textContent = yen(balances.shared / daysLeftInMonth());
   elements.spentTotal.textContent = `${yen(visibleSpent)} 使用`;
-  elements.monthLabel.textContent = selectedMonthLabel();
+  elements.monthListButton.textContent = selectedMonthLabel();
 
   elements.myIncome.value = settings.myIncome || "";
   elements.partnerIncome.value = settings.partnerIncome || "";
@@ -524,11 +634,45 @@ function render() {
 
   renderDisplayNames();
   applyTheme();
+  renderMonthList();
   renderWalletSelector();
   renderThemeOptions();
   renderEditOptions();
   renderCategories(currentMonthVisibleExpenses, sharedSpent, mySpent);
   renderExpenses();
+}
+
+function savedMonthKeys() {
+  const months = new Set([state.selectedMonth, ...Object.keys(state.monthlySettings)]);
+  state.expenses.forEach((expense) => {
+    const date = new Date(expense.createdAt);
+    if (!Number.isNaN(date.getTime())) months.add(monthKeyFromDate(date));
+  });
+
+  return [...months].sort().reverse();
+}
+
+function renderMonthList() {
+  elements.monthList.innerHTML = savedMonthKeys()
+    .map(
+      (monthKey) => `
+        <button class="${monthKey === state.selectedMonth ? "is-active" : ""}" type="button" data-month="${monthKey}">
+          ${monthLabel(monthKey)}
+        </button>
+      `,
+    )
+    .join("");
+
+  elements.monthList.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedMonth = button.dataset.month;
+      getSelectedMonthSettings();
+      elements.monthList.hidden = true;
+      elements.monthListButton.setAttribute("aria-expanded", "false");
+      saveState();
+      render();
+    });
+  });
 }
 
 function applyTheme() {
@@ -689,22 +833,60 @@ function renderExpenses() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
-  sortedExpenses.forEach((expense) => {
-    const item = elements.expenseItemTemplate.content.firstElementChild.cloneNode(true);
-    item.querySelector(".expense-title").textContent = expense.name;
-    item.querySelector(".expense-meta").textContent =
-      `${formatExpenseDate(expense.createdAt)} / ${categoryLabel(expense.category)} / ${walletLabel(expense.wallet)}`;
-    item.querySelector(".expense-amount").textContent = yen(expense.amount);
-    item.querySelector(".edit-button").addEventListener("click", () => {
-      openExpenseEditor(expense.id);
+  groupExpensesByDay(sortedExpenses).forEach(({ dateLabel, total, expenses }) => {
+    const group = document.createElement("section");
+    group.className = "day-group";
+    group.innerHTML = `
+      <div class="day-head">
+        <span>${dateLabel}</span>
+        <strong>支出合計: ${yen(total)}</strong>
+      </div>
+      <div class="day-items"></div>
+    `;
+    const dayItems = group.querySelector(".day-items");
+
+    expenses.forEach((expense) => {
+      const item = elements.expenseItemTemplate.content.firstElementChild.cloneNode(true);
+      item.querySelector(".expense-title").textContent = expense.name;
+      item.querySelector(".expense-meta").textContent =
+        `${categoryLabel(expense.category)} / ${walletLabel(expense.wallet)}`;
+      item.querySelector(".expense-amount").textContent = yen(expense.amount);
+      item.querySelector(".edit-button").addEventListener("click", () => {
+        openExpenseEditor(expense.id);
+      });
+      item.querySelector(".delete-button").addEventListener("click", () => {
+        state.expenses = state.expenses.filter((itemExpense) => itemExpense.id !== expense.id);
+        saveState();
+        render();
+      });
+      dayItems.append(item);
     });
-    item.querySelector(".delete-button").addEventListener("click", () => {
-      state.expenses = state.expenses.filter((itemExpense) => itemExpense.id !== expense.id);
-      saveState();
-      render();
-    });
-    elements.expenseList.append(item);
+
+    elements.expenseList.append(group);
   });
+}
+
+function groupExpensesByDay(expenses) {
+  const groups = expenses.reduce((dailyGroups, expense) => {
+    const date = new Date(expense.createdAt);
+    const key = Number.isNaN(date.getTime()) ? "unknown" : date.toISOString().slice(0, 10);
+
+    if (!dailyGroups[key]) {
+      dailyGroups[key] = {
+        dateLabel: Number.isNaN(date.getTime()) ? "日付なし" : formatExpenseDate(expense.createdAt),
+        total: 0,
+        expenses: [],
+      };
+    }
+
+    dailyGroups[key].total += expense.amount;
+    dailyGroups[key].expenses.push(expense);
+    return dailyGroups;
+  }, {});
+
+  return Object.entries(groups)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([, group]) => group);
 }
 
 function handleSetupInput(event) {
@@ -751,6 +933,13 @@ elements.nextMonthButton.addEventListener("click", () => {
   moveSelectedMonth(1);
 });
 
+elements.monthListButton.addEventListener("click", () => {
+  const isOpen = elements.monthList.hidden;
+  renderMonthList();
+  elements.monthList.hidden = !isOpen;
+  elements.monthListButton.setAttribute("aria-expanded", String(isOpen));
+});
+
 function moveSelectedMonth(offset) {
   const date = selectedMonthDate();
   date.setMonth(date.getMonth() + offset);
@@ -778,6 +967,12 @@ elements.themeOpenButton.addEventListener("click", () => {
   openTheme();
 });
 
+elements.backupOpenButton.addEventListener("click", () => {
+  elements.mainMenu.hidden = true;
+  elements.menuButton.setAttribute("aria-expanded", "false");
+  openBackup();
+});
+
 elements.settingsCloseButton.addEventListener("click", closeSettings);
 elements.settingsCancelButton.addEventListener("click", closeSettings);
 elements.settingsModal.addEventListener("click", (event) => {
@@ -787,6 +982,11 @@ elements.settingsModal.addEventListener("click", (event) => {
 elements.themeCloseButton.addEventListener("click", closeTheme);
 elements.themeModal.addEventListener("click", (event) => {
   if (event.target === elements.themeModal) closeTheme();
+});
+
+elements.backupCloseButton.addEventListener("click", closeBackup);
+elements.backupModal.addEventListener("click", (event) => {
+  if (event.target === elements.backupModal) closeBackup();
 });
 
 function openSettings() {
@@ -809,6 +1009,14 @@ function closeTheme() {
   elements.themeModal.hidden = true;
 }
 
+function openBackup() {
+  elements.backupModal.hidden = false;
+}
+
+function closeBackup() {
+  elements.backupModal.hidden = true;
+}
+
 elements.settingsForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.displayNames.me = normalizeDisplayName(elements.meDisplayName.value);
@@ -816,6 +1024,31 @@ elements.settingsForm.addEventListener("submit", (event) => {
   saveState();
   closeSettings();
   render();
+});
+
+elements.exportDataButton.addEventListener("click", async () => {
+  try {
+    await downloadBackup();
+  } catch {
+    alert("データを書き出せませんでした。もう一度お試しください。");
+  }
+});
+
+elements.importDataButton.addEventListener("click", () => {
+  elements.importDataInput.click();
+});
+
+elements.importDataInput.addEventListener("change", () => {
+  const file = elements.importDataInput.files?.[0];
+
+  if (!file) return;
+
+  if (!confirm("現在のデータが上書きされます。読み込みますか？")) {
+    elements.importDataInput.value = "";
+    return;
+  }
+
+  restoreBackupFile(file);
 });
 
 elements.expenseEditCloseButton.addEventListener("click", closeExpenseEditor);
