@@ -165,6 +165,75 @@ const elements = {
   editExpenseWallet: document.querySelector("#editExpenseWallet"),
 };
 
+function ensureBackupElements() {
+  if (!elements.backupOpenButton && elements.mainMenu) {
+    elements.backupOpenButton = document.createElement("button");
+    elements.backupOpenButton.id = "backupOpenButton";
+    elements.backupOpenButton.type = "button";
+    elements.backupOpenButton.textContent = "バックアップ";
+    elements.mainMenu.append(elements.backupOpenButton);
+  }
+
+  if (!elements.backupModal) {
+    const modal = document.createElement("div");
+    modal.className = "settings-backdrop";
+    modal.id = "backupModal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "backupTitle");
+    modal.hidden = true;
+    modal.innerHTML = `
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="backupTitle">バックアップ</h2>
+          <button class="icon-button" id="backupCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <div class="settings-actions">
+          <button class="save-button" id="exportDataButton" type="button">データを書き出す</button>
+          <button class="text-button" id="importDataButton" type="button">データを読み込む</button>
+        </div>
+        <input id="importDataInput" type="file" accept="application/json,.json" hidden />
+      </section>
+    `;
+    document.body.append(modal);
+  }
+
+  elements.backupModal = document.querySelector("#backupModal");
+  elements.backupCloseButton = document.querySelector("#backupCloseButton");
+  elements.exportDataButton = document.querySelector("#exportDataButton");
+  elements.importDataButton = document.querySelector("#importDataButton");
+  elements.importDataInput = document.querySelector("#importDataInput");
+
+  if (
+    !elements.backupCloseButton ||
+    !elements.exportDataButton ||
+    !elements.importDataButton ||
+    !elements.importDataInput
+  ) {
+    elements.backupModal.innerHTML = `
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="backupTitle">バックアップ</h2>
+          <button class="icon-button" id="backupCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <div class="settings-actions">
+          <button class="save-button" id="exportDataButton" type="button">データを書き出す</button>
+          <button class="text-button" id="importDataButton" type="button">データを読み込む</button>
+        </div>
+        <input id="importDataInput" type="file" accept="application/json,.json" hidden />
+      </section>
+    `;
+    elements.backupCloseButton = document.querySelector("#backupCloseButton");
+    elements.exportDataButton = document.querySelector("#exportDataButton");
+    elements.importDataButton = document.querySelector("#importDataButton");
+    elements.importDataInput = document.querySelector("#importDataInput");
+  }
+}
+
 function loadState() {
   const saved = readStorage();
   if (!saved) return createInitialState();
@@ -922,6 +991,8 @@ function closeExpenseEditor() {
   elements.expenseEditModal.hidden = true;
 }
 
+ensureBackupElements();
+
 elements.setupForm.addEventListener("input", handleSetupInput);
 elements.setupForm.addEventListener("change", handleSetupInput);
 
@@ -1010,7 +1081,9 @@ function closeTheme() {
 }
 
 function openBackup() {
+  ensureBackupElements();
   elements.backupModal.hidden = false;
+  elements.backupModal.removeAttribute("hidden");
 }
 
 function closeBackup() {
