@@ -82,7 +82,6 @@
       <section class="quick-entry">
         <div class="section-title">
           <h2>支出を入力</h2>
-          <span>例: セブン 240円</span>
         </div>
         <div class="wallet-selector" aria-label="支払い元">
           <button class="wallet-option is-active" type="button" data-wallet="shared">共有財布</button>
@@ -90,10 +89,29 @@
           <button class="wallet-option private-field" type="button" data-wallet="partner" hidden>パートナー</button>
         </div>
         <form id="expenseForm" class="expense-form">
-          <input id="expenseText" autocomplete="off" placeholder="セブン 240円" />
-          <button type="submit">追加</button>
+          <input id="expenseText" autocomplete="off" placeholder="例：セブン 240円" />
+          <div class="expense-action-stack">
+            <button type="submit">追加</button>
+            <label class="inline-check">
+              <input id="expenseFixedToggle" type="checkbox" />
+              <span>固定費</span>
+            </label>
+          </div>
         </form>
         <div class="prediction" id="prediction">入力すると自動で分類します</div>
+        <div class="expense-suggestions" id="expenseSuggestions" hidden>
+          <div class="suggestion-label" id="expenseSuggestionLabel">よく使う</div>
+          <div class="suggestion-list" id="expenseSuggestionList"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>日別支出</h2>
+          <span>直近7日</span>
+        </div>
+        <div class="daily-expense-list" id="dailyExpenseList"></div>
+        <div class="daily-expense-summary" id="dailyExpenseSummary"></div>
       </section>
 
       <section class="panel">
@@ -161,11 +179,19 @@
             <select id="editExpenseCategory"></select>
           </label>
           <label>
+            <span>内訳</span>
+            <select id="editExpenseSubcategory"></select>
+          </label>
+          <label>
             <span>支払い元</span>
             <select id="editExpenseWallet">
               <option value="shared">共有財布</option>
               <option value="me">自分</option>
             </select>
+          </label>
+          <label class="inline-check">
+            <input id="editExpenseFixedToggle" type="checkbox" />
+            <span>固定費</span>
           </label>
           <div class="settings-actions">
             <button class="text-button" id="expenseEditCancelButton" type="button">閉じる</button>
@@ -200,6 +226,71 @@
           <button class="text-button" id="importDataButton" type="button">データを読み込む</button>
         </div>
         <input id="importDataInput" type="file" accept="application/json,.json" hidden />
+      </section>
+    </div>
+
+    <div class="settings-backdrop" id="budgetModal" role="dialog" aria-modal="true" aria-labelledby="budgetTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="budgetTitle">予算設定</h2>
+          <button class="icon-button" id="budgetCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <form class="settings-form" id="budgetForm">
+          <input id="editingBudgetCategory" type="hidden" />
+          <label>
+            <span id="budgetCategoryName">カテゴリ</span>
+            <input id="categoryBudgetInput" inputmode="numeric" pattern="[0-9]*" placeholder="例 30000" />
+          </label>
+          <div class="settings-actions">
+            <button class="text-button" id="budgetClearButton" type="button">未設定に戻す</button>
+            <button class="save-button" type="submit">保存</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="settings-backdrop" id="fixedCostModal" role="dialog" aria-modal="true" aria-labelledby="fixedCostTitle" hidden>
+      <section class="settings-panel">
+        <div class="settings-head">
+          <h2 id="fixedCostTitle">固定費</h2>
+          <button class="icon-button" id="fixedCostCloseButton" type="button" aria-label="閉じる" title="閉じる">
+            ×
+          </button>
+        </div>
+        <p class="fixed-cost-status" id="fixedCostStatus"></p>
+        <form class="settings-form" id="fixedCostForm">
+          <input id="editingFixedCostId" type="hidden" />
+          <label>
+            <span>名称</span>
+            <input id="fixedCostName" autocomplete="off" placeholder="例 家賃" />
+          </label>
+          <label>
+            <span>金額</span>
+            <input id="fixedCostAmount" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
+          </label>
+          <label>
+            <span>カテゴリ</span>
+            <select id="fixedCostCategory"></select>
+          </label>
+          <label>
+            <span>内訳</span>
+            <select id="fixedCostSubcategory"></select>
+          </label>
+          <label>
+            <span>支払い元</span>
+            <select id="fixedCostWallet">
+              <option value="shared">共有財布</option>
+              <option value="me">自分</option>
+            </select>
+          </label>
+          <div class="settings-actions">
+            <button class="text-button" id="fixedCostCancelButton" type="button">新規に戻す</button>
+            <button class="save-button" type="submit">保存</button>
+          </div>
+        </form>
+        <div class="fixed-cost-list" id="fixedCostList"></div>
       </section>
     </div>
 

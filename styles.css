@@ -340,6 +340,10 @@ select {
   padding: 12px 14px;
 }
 
+#expenseText::placeholder {
+  color: #aeb8b6;
+}
+
 select {
   background-image:
     linear-gradient(45deg, transparent 50%, var(--muted) 50%),
@@ -364,6 +368,14 @@ select:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 76px;
   gap: 8px;
+  align-items: start;
+}
+
+.expense-action-stack {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-width: 0;
 }
 
 .wallet-selector {
@@ -407,14 +419,127 @@ select:focus {
 }
 
 .prediction {
-  margin-top: 10px;
+  margin-top: -26px;
   min-height: 18px;
+}
+
+.expense-suggestions {
+  display: grid;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.suggestion-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.suggestion-list {
+  display: flex;
+  gap: 6px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.suggestion-list::-webkit-scrollbar {
+  display: none;
+}
+
+.suggestion-chip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  max-width: min(220px, 76vw);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--accent-dark);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-chip:active {
+  background: #f4f7f7;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.inline-check input {
+  -webkit-appearance: checkbox;
+  appearance: checkbox;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  max-width: 18px;
+  padding: 0;
+  accent-color: var(--accent);
 }
 
 .category-list,
 .expense-list {
   display: grid;
   gap: 10px;
+}
+
+.daily-expense-summary,
+.daily-expense-list {
+  display: grid;
+  gap: 8px;
+}
+
+.daily-expense-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.weekly-expense-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfa;
+}
+
+.weekly-expense-summary div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.weekly-expense-summary span,
+.daily-expense-row span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.weekly-expense-summary strong,
+.daily-expense-row strong {
+  color: var(--ink);
+  font-size: 14px;
 }
 
 .monthly-summary,
@@ -486,15 +611,78 @@ select:focus {
   font-size: 14px;
 }
 
+.category-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: inherit;
+  text-align: left;
+  padding: 0;
+}
+
 .category-head span,
-.category-head strong {
+.category-head strong,
+.category-toggle span,
+.category-toggle strong {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .category-head strong,
+.category-toggle strong,
 .expense-amount {
   font-variant-numeric: tabular-nums;
+}
+
+.category-breakdown {
+  display: grid;
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.category-breakdown div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.category-breakdown span,
+.category-breakdown strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.category-breakdown strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.category-budget-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.category-budget-note.is-over-budget {
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+.category-budget-button {
+  flex: 0 0 auto;
+  padding: 0;
 }
 
 .meter {
@@ -520,6 +708,44 @@ select:focus {
   min-height: 58px;
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.fixed-cost-status {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.fixed-cost-list {
+  display: grid;
+  margin-top: 12px;
+}
+
+.fixed-cost-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.fixed-cost-item > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fixed-cost-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fixed-cost-item strong,
+.fixed-cost-item b {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 .day-group {
