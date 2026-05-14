@@ -182,8 +182,18 @@ let expandedCategories = {
   food: false,
   fixed: false,
 };
+let selectedReportDateKey = localDateKey(new Date());
 
 const elements = {
+  homeView: document.querySelector("#homeView"),
+  reportView: document.querySelector("#reportView"),
+  reportMonthLabel: document.querySelector("#reportMonthLabel"),
+  reportCalendar: document.querySelector("#reportCalendar"),
+  reportCalendarSelected: document.querySelector("#reportCalendarSelected"),
+  reportDailyExpenseList: document.querySelector("#reportDailyExpenseList"),
+  reportWeeklyComparison: document.querySelector("#reportWeeklyComparison"),
+  reportMonthlyComparison: document.querySelector("#reportMonthlyComparison"),
+  homeReturnButton: document.querySelector("#homeReturnButton"),
   sharedBalance: document.querySelector("#sharedBalance"),
   myBalance: document.querySelector("#myBalance"),
   myBalanceName: document.querySelector("#myBalanceName"),
@@ -212,8 +222,6 @@ const elements = {
   walletButtons: document.querySelectorAll(".wallet-option"),
   prediction: document.querySelector("#prediction"),
   spentTotal: document.querySelector("#spentTotal"),
-  dailyExpenseSummary: document.querySelector("#dailyExpenseSummary"),
-  dailyExpenseList: document.querySelector("#dailyExpenseList"),
   categoryList: document.querySelector("#categoryList"),
   expenseList: document.querySelector("#expenseList"),
   expenseItemTemplate: document.querySelector("#expenseItemTemplate"),
@@ -221,6 +229,7 @@ const elements = {
   resetButton: document.querySelector("#resetButton"),
   menuButton: document.querySelector("#menuButton"),
   mainMenu: document.querySelector("#mainMenu"),
+  reportOpenButton: document.querySelector("#reportOpenButton"),
   settingsOpenButton: document.querySelector("#settingsOpenButton"),
   settingsModal: document.querySelector("#settingsModal"),
   settingsForm: document.querySelector("#settingsForm"),
@@ -1081,6 +1090,7 @@ function render() {
   elements.dailyBudget.textContent = yen(balances.shared / daysLeftInMonth());
   elements.spentTotal.textContent = `${yen(visibleSpent)} 使用`;
   elements.monthListButton.textContent = selectedMonthLabel();
+  elements.reportMonthLabel.textContent = selectedMonthLabel();
 
   elements.myIncome.value = settings.myIncome || "";
   elements.partnerIncome.value = settings.partnerIncome || "";
@@ -1094,7 +1104,10 @@ function render() {
   renderThemeOptions();
   renderEditOptions();
   if (elements.fixedCostModal && !elements.fixedCostModal.hidden) renderFixedCosts();
-  renderDailyExpenses(currentMonthVisibleExpenses);
+  renderReportCalendar(currentMonthVisibleExpenses);
+  renderReportDailyExpenses(currentMonthVisibleExpenses);
+  renderReportWeeklyComparison(currentMonthVisibleExpenses);
+  renderReportMonthlyComparison();
   renderCategories(currentMonthVisibleExpenses, sharedSpent, mySpent);
   renderExpenses();
   renderExpenseSuggestions(elements.expenseText.value.trim());
@@ -1413,11 +1426,10 @@ function totalBySubcategory(expenses, categoryKey, subcategoryKey) {
     .reduce((sum, expense) => sum + expense.amount, 0);
 }
 
-function renderDailyExpenses(expenses) {
-  if (!elements.dailyExpenseSummary || !elements.dailyExpenseList) return;
+function renderReportDailyExpenses(expenses) {
+  if (!elements.reportDailyExpenseList) return;
 
-  elements.dailyExpenseSummary.innerHTML = "";
-  elements.dailyExpenseList.innerHTML = "";
+  elements.reportDailyExpenseList.innerHTML = "";
 
   const dailyTotals = groupDailyExpenseTotals(expenses);
 
@@ -1425,35 +1437,57 @@ function renderDailyExpenses(expenses) {
     const empty = document.createElement("p");
     empty.className = "empty";
     empty.textContent = "まだ支出はありません";
-    elements.dailyExpenseList.append(empty);
+    elements.reportDailyExpenseList.append(empty);
     return;
   }
 
-  dailyTotals.slice(0, 7).forEach((day) => {
+  dailyTotals.forEach((day) => {
     const row = document.createElement("div");
     row.className = "daily-expense-row";
     row.innerHTML = `
       <span>${day.label}</span>
       <strong>${yen(day.total)}</strong>
     `;
-    elements.dailyExpenseList.append(row);
+    elements.reportDailyExpenseList.append(row);
   });
+}
 
-  const weeklyComparison = getWeeklyExpenseComparison(expenses);
-  elements.dailyExpenseSummary.innerHTML = `
-    <div class="weekly-expense-summary">
-      <div>
-        <span>今週</span>
-        <strong>${yen(weeklyComparison.thisWeek)}</strong>
-      </div>
-      <div>
-        <span>先週</span>
-        <strong>${yen(weeklyComparison.lastWeek)}</strong>
-      </div>
-      <div>
-        <span>${weeklyComparison.diffLabel}</span>
-        <strong>${weeklyComparison.diffText}</strong>
-      </div>
+function renderReportWeeklyComparison(expenses) {
+  if (!elements.reportWeeklyComparison) return;
+
+  const comparison = getWeeklyExpenseComparison(expenses);
+  elements.reportWeeklyComparison.innerHTML = `
+    <div class="weekly-comparison-row">
+      <span>今週</span>
+      <strong>${yen(comparison.thisWeek)}</strong>
+    </div>
+    <div class="weekly-comparison-row">
+      <span>先週</span>
+      <strong>${yen(comparison.lastWeek)}</strong>
+    </div>
+    <div class="weekly-comparison-row">
+      <span>${comparison.diffLabel}</span>
+      <strong>${comparison.diffText}</strong>
+    </div>
+  `;
+}
+
+function renderReportMonthlyComparison() {
+  if (!elements.reportMonthlyComparison) return;
+
+  const comparison = getMonthlyExpenseComparison();
+  elements.reportMonthlyComparison.innerHTML = `
+    <div class="monthly-comparison-row">
+      <span>今月</span>
+      <strong>${yen(comparison.thisMonth)}</strong>
+    </div>
+    <div class="monthly-comparison-row">
+      <span>先月</span>
+      <strong>${yen(comparison.lastMonth)}</strong>
+    </div>
+    <div class="monthly-comparison-row">
+      <span>${comparison.diffLabel}</span>
+      <strong>${comparison.diffText}</strong>
     </div>
   `;
 }
@@ -1496,12 +1530,80 @@ function formatDailyExpenseLabel(date) {
   return base;
 }
 
+function renderReportCalendar(expenses) {
+  if (!elements.reportCalendar || !elements.reportCalendarSelected) return;
+
+  elements.reportCalendar.innerHTML = "";
+
+  const monthDate = selectedMonthDate();
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const firstWeekday = (firstDay.getDay() + 6) % 7;
+  const dailyTotals = groupDailyExpenseTotals(expenses);
+  const totalsByKey = dailyTotals.reduce((totals, day) => {
+    totals[day.key] = day.total;
+    return totals;
+  }, {});
+  const highestTotal = Math.max(0, ...dailyTotals.map((day) => day.total));
+
+  ["月", "火", "水", "木", "金", "土", "日"].forEach((day) => {
+    const label = document.createElement("span");
+    label.className = "report-calendar-weekday";
+    label.textContent = day;
+    elements.reportCalendar.append(label);
+  });
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    const blank = document.createElement("span");
+    blank.className = "report-calendar-blank";
+    elements.reportCalendar.append(blank);
+  }
+
+  for (let day = 1; day <= lastDate; day += 1) {
+    const date = new Date(year, month, day);
+    const key = localDateKey(date);
+    const total = totalsByKey[key] || 0;
+    const button = document.createElement("button");
+    button.className = `report-calendar-day ${calendarToneClass(total, highestTotal)}`;
+    button.type = "button";
+    button.textContent = day;
+    button.setAttribute("aria-label", `${month + 1}/${day} ${yen(total)}`);
+    button.classList.toggle("is-selected", key === selectedReportDateKey);
+    button.addEventListener("click", () => {
+      selectedReportDateKey = key;
+      renderReportCalendar(expenses);
+    });
+    elements.reportCalendar.append(button);
+  }
+
+  updateReportCalendarSelected(totalsByKey);
+}
+
+function calendarToneClass(total, highestTotal) {
+  if (!total) return "";
+  if (highestTotal > 0 && total >= highestTotal * 0.7) return "is-strong";
+  return "is-spent";
+}
+
+function updateReportCalendarSelected(totalsByKey) {
+  const date = new Date(`${selectedReportDateKey}T00:00:00`);
+
+  if (Number.isNaN(date.getTime()) || monthKeyFromDate(date) !== state.selectedMonth) {
+    elements.reportCalendarSelected.textContent = "日付を選ぶと支出合計を表示します";
+    return;
+  }
+
+  elements.reportCalendarSelected.textContent =
+    `${date.getMonth() + 1}/${date.getDate()} の支出 ${yen(totalsByKey[selectedReportDateKey] || 0)}`;
+}
+
 function getWeeklyExpenseComparison(expenses) {
   const today = new Date();
   const thisWeekStart = startOfWeek(today);
   const nextWeekStart = addDays(thisWeekStart, 7);
   const lastWeekStart = addDays(thisWeekStart, -7);
-
   const thisWeek = totalBetweenDates(expenses, thisWeekStart, nextWeekStart);
   const lastWeek = totalBetweenDates(expenses, lastWeekStart, thisWeekStart);
   const diff = thisWeek - lastWeek;
@@ -1512,6 +1614,31 @@ function getWeeklyExpenseComparison(expenses) {
     diffLabel: diff === 0 ? "先週と同じ" : "先週より",
     diffText: diff === 0 ? "" : `${diff > 0 ? "+" : "-"}${yen(Math.abs(diff))}`,
   };
+}
+
+function getMonthlyExpenseComparison() {
+  const previousMonth = shiftMonthKey(state.selectedMonth, -1);
+  const thisMonth = totalVisibleExpensesForMonth(state.selectedMonth);
+  const lastMonth = totalVisibleExpensesForMonth(previousMonth);
+  const diff = thisMonth - lastMonth;
+
+  return {
+    thisMonth,
+    lastMonth,
+    diffLabel: diff === 0 ? "先月と同じ" : "先月より",
+    diffText: diff === 0 ? "" : `${diff > 0 ? "+" : "-"}${yen(Math.abs(diff))}`,
+  };
+}
+
+function totalVisibleExpensesForMonth(monthKey) {
+  return state.expenses
+    .filter((expense) => expense.wallet !== "partner" && expenseMatchesMonth(expense, monthKey))
+    .reduce((sum, expense) => sum + expense.amount, 0);
+}
+
+function shiftMonthKey(monthKey, offset) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return monthKeyFromDate(new Date(year, month - 1 + offset, 1));
 }
 
 function totalBetweenDates(expenses, start, end) {
@@ -1920,6 +2047,12 @@ elements.menuButton.addEventListener("click", () => {
   elements.menuButton.setAttribute("aria-expanded", String(isOpen));
 });
 
+elements.reportOpenButton.addEventListener("click", () => {
+  elements.mainMenu.hidden = true;
+  elements.menuButton.setAttribute("aria-expanded", "false");
+  openReport();
+});
+
 elements.settingsOpenButton.addEventListener("click", () => {
   elements.mainMenu.hidden = true;
   elements.menuButton.setAttribute("aria-expanded", "false");
@@ -1943,6 +2076,8 @@ elements.backupOpenButton.addEventListener("click", () => {
   elements.menuButton.setAttribute("aria-expanded", "false");
   openBackup();
 });
+
+elements.homeReturnButton.addEventListener("click", closeReport);
 
 elements.settingsCloseButton.addEventListener("click", closeSettings);
 elements.settingsCancelButton.addEventListener("click", closeSettings);
@@ -1999,6 +2134,28 @@ function openTheme() {
 
 function closeTheme() {
   elements.themeModal.hidden = true;
+}
+
+function openReport() {
+  elements.homeView.hidden = true;
+  elements.reportView.hidden = false;
+  elements.reportMonthLabel.textContent = selectedMonthLabel();
+  if (monthKeyFromDate(new Date(`${selectedReportDateKey}T00:00:00`)) !== state.selectedMonth) {
+    const [year, month] = state.selectedMonth.split("-").map(Number);
+    selectedReportDateKey = localDateKey(new Date(year, month - 1, 1));
+  }
+  const currentMonthVisibleExpenses = monthlyExpenses().filter((expense) => expense.wallet !== "partner");
+  renderReportCalendar(currentMonthVisibleExpenses);
+  renderReportDailyExpenses(currentMonthVisibleExpenses);
+  renderReportWeeklyComparison(currentMonthVisibleExpenses);
+  renderReportMonthlyComparison();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function closeReport() {
+  elements.reportView.hidden = true;
+  elements.homeView.hidden = false;
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 
 function openFixedCosts() {

@@ -8,127 +8,167 @@
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Couple Budget</p>
-          <h1>ふたり財布</h1>
-        </div>
-        <div class="top-actions">
-          <button class="icon-button" id="resetButton" type="button" aria-label="リセット" title="リセット">
-            ↺
-          </button>
-          <button
-            class="icon-button"
-            id="menuButton"
-            type="button"
-            aria-label="メニュー"
-            aria-expanded="false"
-            title="メニュー"
-          >
-            ⋯
-          </button>
-          <div class="menu-popover" id="mainMenu" hidden>
-            <button id="settingsOpenButton" type="button">設定</button>
-            <button id="themeOpenButton" type="button">テーマカラー</button>
-            <button id="backupOpenButton" type="button">バックアップ</button>
+      <div id="homeView">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Couple Budget</p>
+            <h1>ふたり財布</h1>
           </div>
-        </div>
-      </header>
-
-      <section class="summary-band" aria-label="今月の残高">
-        <div class="main-balance">
-          <span>共有財布</span>
-          <strong id="sharedBalance">0円</strong>
-          <small>1日あたり <b id="dailyBudget">0円</b></small>
-        </div>
-        <div class="mini-balances">
-          <article>
-            <span id="myBalanceName">自分</span>
-            <strong id="myBalance">0円</strong>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title">
-          <h2>今月の予算</h2>
-          <div class="month-switch" aria-label="月切り替え">
-            <button id="prevMonthButton" type="button" aria-label="前の月">‹</button>
-            <button class="month-label-button" id="monthListButton" type="button" aria-expanded="false"></button>
-            <button id="nextMonthButton" type="button" aria-label="次の月">›</button>
-            <div class="month-list-popover" id="monthList" hidden></div>
+          <div class="top-actions">
+            <button class="icon-button" id="resetButton" type="button" aria-label="リセット" title="リセット">
+              ↺
+            </button>
+            <button
+              class="icon-button"
+              id="menuButton"
+              type="button"
+              aria-label="メニュー"
+              aria-expanded="false"
+              title="メニュー"
+            >
+              ⋯
+            </button>
+            <div class="menu-popover" id="mainMenu" hidden>
+              <button id="reportOpenButton" type="button">レポート</button>
+              <button id="settingsOpenButton" type="button">設定</button>
+              <button id="themeOpenButton" type="button">テーマカラー</button>
+              <button id="backupOpenButton" type="button">バックアップ</button>
+            </div>
           </div>
-        </div>
-        <form class="setup-grid" id="setupForm">
-          <label>
-            <span id="myIncomeText">自分の収入</span>
-            <input id="myIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
-          </label>
-          <label class="private-field" id="partnerIncomeField" hidden>
-            <span id="partnerIncomeText">パートナーの収入</span>
-            <input id="partnerIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
-          </label>
-          <label>
-            <span id="mySharedText">自分が共有財布へ</span>
-            <input id="myShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
-          </label>
-          <label>
-            <span id="partnerSharedText">パートナーが共有財布へ</span>
-            <input id="partnerShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
-          </label>
-        </form>
-      </section>
+        </header>
 
-      <section class="quick-entry">
-        <div class="section-title">
-          <h2>支出を入力</h2>
-        </div>
-        <div class="wallet-selector" aria-label="支払い元">
-          <button class="wallet-option is-active" type="button" data-wallet="shared">共有財布</button>
-          <button class="wallet-option" type="button" data-wallet="me">自分</button>
-          <button class="wallet-option private-field" type="button" data-wallet="partner" hidden>パートナー</button>
-        </div>
-        <form id="expenseForm" class="expense-form">
-          <input id="expenseText" autocomplete="off" placeholder="例：セブン 240円" />
-          <div class="expense-action-stack">
-            <button type="submit">追加</button>
-            <label class="inline-check">
-              <input id="expenseFixedToggle" type="checkbox" />
-              <span>固定費</span>
+        <section class="summary-band" aria-label="今月の残高">
+          <div class="main-balance">
+            <span>共有財布</span>
+            <strong id="sharedBalance">0円</strong>
+            <small>1日あたり <b id="dailyBudget">0円</b></small>
+          </div>
+          <div class="mini-balances">
+            <article>
+              <span id="myBalanceName">自分</span>
+              <strong id="myBalance">0円</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>今月の予算</h2>
+            <div class="month-switch" aria-label="月切り替え">
+              <button id="prevMonthButton" type="button" aria-label="前の月">‹</button>
+              <button class="month-label-button" id="monthListButton" type="button" aria-expanded="false"></button>
+              <button id="nextMonthButton" type="button" aria-label="次の月">›</button>
+              <div class="month-list-popover" id="monthList" hidden></div>
+            </div>
+          </div>
+          <form class="setup-grid" id="setupForm">
+            <label>
+              <span id="myIncomeText">自分の収入</span>
+              <input id="myIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
             </label>
+            <label class="private-field" id="partnerIncomeField" hidden>
+              <span id="partnerIncomeText">パートナーの収入</span>
+              <input id="partnerIncome" inputmode="numeric" pattern="[0-9]*" placeholder="例 250000" />
+            </label>
+            <label>
+              <span id="mySharedText">自分が共有財布へ</span>
+              <input id="myShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
+            </label>
+            <label>
+              <span id="partnerSharedText">パートナーが共有財布へ</span>
+              <input id="partnerShared" inputmode="numeric" pattern="[0-9]*" placeholder="例 90000" />
+            </label>
+          </form>
+        </section>
+
+        <section class="quick-entry">
+          <div class="section-title">
+            <h2>支出を入力</h2>
           </div>
-        </form>
-        <div class="prediction" id="prediction">入力すると自動で分類します</div>
-        <div class="expense-suggestions" id="expenseSuggestions" hidden>
-          <div class="suggestion-label" id="expenseSuggestionLabel">よく使う</div>
-          <div class="suggestion-list" id="expenseSuggestionList"></div>
-        </div>
-      </section>
+          <div class="wallet-selector" aria-label="支払い元">
+            <button class="wallet-option is-active" type="button" data-wallet="shared">共有財布</button>
+            <button class="wallet-option" type="button" data-wallet="me">自分</button>
+            <button class="wallet-option private-field" type="button" data-wallet="partner" hidden>パートナー</button>
+          </div>
+          <form id="expenseForm" class="expense-form">
+            <input id="expenseText" autocomplete="off" placeholder="例：セブン 240円" />
+            <div class="expense-action-stack">
+              <button type="submit">追加</button>
+              <label class="inline-check">
+                <input id="expenseFixedToggle" type="checkbox" />
+                <span>固定費</span>
+              </label>
+            </div>
+          </form>
+          <div class="prediction" id="prediction">入力すると自動で分類します</div>
+          <div class="expense-suggestions" id="expenseSuggestions" hidden>
+            <div class="suggestion-label" id="expenseSuggestionLabel">よく使う</div>
+            <div class="suggestion-list" id="expenseSuggestionList"></div>
+          </div>
+        </section>
 
-      <section class="panel">
-        <div class="section-title">
-          <h2>日別支出</h2>
-          <span>直近7日</span>
-        </div>
-        <div class="daily-expense-list" id="dailyExpenseList"></div>
-        <div class="daily-expense-summary" id="dailyExpenseSummary"></div>
-      </section>
+        <section class="panel">
+          <div class="section-title">
+            <h2>カテゴリ別</h2>
+            <span id="spentTotal">0円 使用</span>
+          </div>
+          <div class="category-list" id="categoryList"></div>
+        </section>
 
-      <section class="panel">
-        <div class="section-title">
-          <h2>カテゴリ別</h2>
-          <span id="spentTotal">0円 使用</span>
-        </div>
-        <div class="category-list" id="categoryList"></div>
-      </section>
+        <section class="panel">
+          <div class="section-title">
+            <h2>履歴</h2>
+            <button class="text-button" id="clearExpensesButton" type="button">履歴を消す</button>
+          </div>
+          <div class="expense-list" id="expenseList"></div>
+        </section>
+      </div>
 
-      <section class="panel">
-        <div class="section-title">
-          <h2>履歴</h2>
-          <button class="text-button" id="clearExpensesButton" type="button">履歴を消す</button>
-        </div>
-        <div class="expense-list" id="expenseList"></div>
-      </section>
+      <div class="report-view" id="reportView" hidden>
+        <header class="report-head">
+          <div>
+            <h1>レポート</h1>
+            <p id="reportMonthLabel">2026年5月</p>
+          </div>
+          <button class="home-return-button" id="homeReturnButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 11.5 12 4l9 7.5" />
+              <path d="M5.5 10.5V20h13v-9.5" />
+              <path d="M9.5 20v-5h5v5" />
+            </svg>
+            <span>ホームへ戻る</span>
+          </button>
+        </header>
+
+        <section class="panel report-calendar-card">
+          <div class="section-title">
+            <h2>カレンダー</h2>
+          </div>
+          <div class="report-calendar" id="reportCalendar"></div>
+          <p class="report-calendar-selected" id="reportCalendarSelected">日付を選ぶと支出合計を表示します</p>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>日別支出</h2>
+          </div>
+          <div class="daily-expense-list" id="reportDailyExpenseList"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>週比較</h2>
+          </div>
+          <div class="weekly-comparison-list" id="reportWeeklyComparison"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>月比較</h2>
+          </div>
+          <div class="monthly-comparison-list" id="reportMonthlyComparison"></div>
+        </section>
+      </div>
     </main>
 
     <div class="settings-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
